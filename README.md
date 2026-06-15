@@ -52,6 +52,3 @@ Quickly explore nested JSON data without writing scripts.
 
 ---
 
-## 📸 Preview
-
-> (You can replace this with real screenshots later)
