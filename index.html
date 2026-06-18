@@ -5,6 +5,473 @@
 <title>JSON DevTools Viewer</title>
 
 <style>
+/* ========== THEME VARIABLES ========== */
+:root[data-theme="dark"] {
+    --bg: #1e1e1e;
+    --bg-alt: #252526;
+    --bg-header: #2d2d30;
+    --border: #333;
+    --text: #d4d4d4;
+    --muted: #888;
+    --key: #9cdcfe;
+    --value: #ce9178;
+    --path: #6a9955;
+    --hover: rgba(255, 255, 255, 0.05);
+    --mark-bg: #264f78;
+    --mark-fg: #fff;
+    --error: #f44747;
+    --input-bg: #ffffff;
+    --input-fg: #111;
+    --input-border: #cfcfcf;
+    --tab-active-bg: #1e1e1e;
+    --tab-active-fg: #ffffff;
+    --tab-inactive-fg: #9d9d9d;
+    --accent: #0e7afe;
+}
+
+:root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-alt: #f5f5f5;
+    --bg-header: #ececec;
+    --border: #d0d0d0;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --key: #0451a5;
+    --value: #a31515;
+    --path: #2a8a3e;
+    --hover: rgba(0, 0, 0, 0.05);
+    --mark-bg: #ffe58f;
+    --mark-fg: #111;
+    --error: #d10000;
+    --input-bg: #ffffff;
+    --input-fg: #111;
+    --input-border: #cfcfcf;
+    --tab-active-bg: #ffffff;
+    --tab-active-fg: #111;
+    --tab-inactive-fg: #555;
+    --accent: #0e7afe;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* ========== HEADER / TABS ========== */
+#header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border);
+    padding: 0 8px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+#tabs {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    gap: 2px;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    height: 100%;
+    color: var(--tab-inactive-fg);
+    cursor: pointer;
+    font-size: 13px;
+    border: none;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s, background .15s;
+}
+
+.tab:hover {
+    color: var(--tab-active-fg);
+    background: var(--hover);
+}
+
+.tab.active {
+    color: var(--tab-active-fg);
+    border-bottom-color: var(--accent);
+}
+
+#themeToggle {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#themeToggle:hover {
+    background: var(--hover);
+}
+
+/* ========== MAIN ========== */
+#main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+/* ========== LEFT ========== */
+#left {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+}
+
+textarea {
+    flex: 1;
+    padding: 12px;
+    font-size: 13px;
+    border: none;
+    outline: none;
+    resize: none;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    font-family: inherit;
+}
+
+/* ========== RIGHT ========== */
+#right {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* search bar */
+#searchBar {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-alt);
+}
+
+#search {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--input-fg);
+    outline: none;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+#search::placeholder {
+    color: var(--muted);
+}
+
+#tree {
+    flex: 1;
+    overflow: auto;
+    padding: 10px 12px;
+}
+
+/* ========== TREE ========== */
+.node {
+    margin-left: 14px;
+    border-left: 1px solid var(--border);
+    padding-left: 10px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.row:hover {
+    background: var(--hover);
+}
+
+.key {
+    color: var(--key);
+}
+
+.value {
+    color: var(--value);
+}
+
+.path {
+    color: var(--path);
+    font-size: 11px;
+    opacity: 0.9;
+    margin-left: 6px;
+}
+
+/* children */
+.children {
+    margin-left: 10px;
+}
+
+.collapsed > .children {
+    display: none;
+}
+
+/* collapse indicator */
+.arrow::before {
+    content: "▾";
+    display: inline-block;
+    width: 12px;
+    color: var(--muted);
+}
+
+.collapsed > .row .arrow::before {
+    content: "▸";
+}
+
+/* highlight */
+mark {
+    background: var(--mark-bg);
+    color: var(--mark-fg);
+    padding: 0 2px;
+}
+
+.error {
+    color: var(--error);
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div id="header">
+    <div id="tabs">
+        <button class="tab active" data-tab="json-format">JSON 格式化</button>
+    </div>
+    <button id="themeToggle" title="切换主题">
+        <span id="themeIcon">🌙</span>
+        <span id="themeLabel">深色</span>
+    </button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+    <!-- LEFT -->
+    <div id="left">
+        <textarea id="input" placeholder="粘贴 JSON 或嵌套 JSON string..."></textarea>
+    </div>
+
+    <!-- RIGHT -->
+    <div id="right">
+        <div id="searchBar">
+            <input id="search" placeholder="Search key / value..." />
+        </div>
+        <div id="tree"></div>
+    </div>
+</div>
+
+<script>
+
+/* ========== theme ========== */
+const THEME_KEY = "json-devtools-theme";
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const icon = document.getElementById("themeIcon");
+    const label = document.getElementById("themeLabel");
+    if (theme === "dark") {
+        icon.textContent = "🌙";
+        label.textContent = "深色";
+    } else {
+        icon.textContent = "☀️";
+        label.textContent = "浅色";
+    }
+    localStorage.setItem(THEME_KEY, theme);
+}
+
+(function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(saved || (prefersDark ? "dark" : "light"));
+})();
+
+document.getElementById("themeToggle").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    applyTheme(cur === "dark" ? "light" : "dark");
+});
+
+/* ========== tabs ========== */
+document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        // 当前只有 JSON 格式化一个功能，后续可在此根据 data-tab 切换内容区
+    });
+});
+
+/* ========== parse ========== */
+function deepParse(v) {
+    if (typeof v === "string") {
+        try {
+            return deepParse(JSON.parse(v));
+        } catch {
+            return v;
+        }
+    }
+
+    if (Array.isArray(v)) return v.map(deepParse);
+
+    if (v && typeof v === "object") {
+        const o = {};
+        for (const k in v) {
+            o[k] = deepParse(v[k]);
+        }
+        return o;
+    }
+
+    return v;
+}
+
+/* ========== render ========== */
+function createNode(key, value, path = "") {
+    const wrap = document.createElement("div");
+    wrap.className = "node";
+
+    const isObj = value && typeof value === "object";
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const fullPath = path ? `${path}.${key}` : key;
+
+    const arrow = document.createElement("span");
+    arrow.className = "arrow";
+
+    const keyEl = document.createElement("span");
+    keyEl.className = "key";
+    keyEl.textContent = key;
+
+    const pathEl = document.createElement("span");
+    pathEl.className = "path";
+    pathEl.textContent = fullPath;
+
+    row.appendChild(arrow);
+    row.appendChild(keyEl);
+    row.appendChild(pathEl);
+
+    const children = document.createElement("div");
+    children.className = "children";
+
+    if (isObj) {
+        for (const k in value) {
+            children.appendChild(createNode(k, value[k], fullPath));
+        }
+    } else {
+        const val = document.createElement("span");
+        val.className = "value";
+        val.textContent = `: ${value}`;
+        row.appendChild(val);
+    }
+
+    row.onclick = () => {
+        wrap.classList.toggle("collapsed");
+    };
+
+    wrap.appendChild(row);
+    wrap.appendChild(children);
+
+    return wrap;
+}
+
+/* ========== render root ========== */
+let state = null;
+
+function render() {
+    const tree = document.getElementById("tree");
+    tree.innerHTML = "";
+
+    if (!state) return;
+
+    for (const k in state) {
+        tree.appendChild(createNode(k, state[k], ""));
+    }
+}
+
+/* ========== live update ========== */
+function update(text) {
+    try {
+        state = deepParse(JSON.parse(text));
+        render();
+    } catch {
+        document.getElementById("tree").innerHTML =
+            "<span class='error'>Invalid JSON</span>";
+    }
+}
+
+/* ========== search ========== */
+function search(query) {
+    const nodes = document.querySelectorAll(".node");
+
+    if (!query) {
+        nodes.forEach(n => n.style.display = "");
+        return;
+    }
+
+    const q = query.toLowerCase();
+
+    nodes.forEach(node => {
+        const text = node.innerText.toLowerCase();
+
+        if (text.includes(q)) {
+            node.style.display = "";
+
+            // auto expand parents
+            let p = node;
+            while (p) {
+                p.classList.remove("collapsed");
+                p = p.parentElement?.closest(".node");
+            }
+        } else {
+            node.style.display = "none";
+        }
+    });
+}
+
+/* ========== events ========== */
+document.getElementById("input").addEventListener("input", e => {
+    update(e.target.value);
+});
+
+document.getElementById("search").addEventListener("input", e => {
+    search(e.target.value);
+});
+
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<title>JSON DevTools Viewer</title>
+
+<style>
 body {
     margin: 0;
     height: 100vh;
