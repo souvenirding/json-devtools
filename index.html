@@ -253,6 +253,165 @@ mark {
 .error {
     color: var(--error);
 }
+
+/* ========== TAB PANELS ========== */
+.panel {
+    display: none;
+    flex: 1;
+    min-height: 0;
+}
+.panel.active {
+    display: flex;
+}
+
+/* --- diff panel --- */
+#diff-panel .diff-inputs {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+#diff-panel {
+    flex-direction: column;
+}
+#diff-panel .diff-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+#diff-panel .diff-side:first-child {
+    border-right: 1px solid var(--border);
+}
+#diff-panel .diff-label {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+}
+#diff-panel textarea {
+    flex: 1;
+    padding: 12px;
+    font-size: 13px;
+    border: none;
+    outline: none;
+    resize: none;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    font-family: inherit;
+}
+#diff-panel .diff-result {
+    flex: 1;
+    overflow: auto;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.diff-added {
+    background: rgba(46, 160, 67, 0.18);
+    color: #3fb950;
+}
+.diff-removed {
+    background: rgba(248, 81, 73, 0.18);
+    color: #f85149;
+}
+.diff-unchanged {
+    color: var(--muted);
+}
+.diff-word-del {
+    background: rgba(248, 81, 73, 0.45);
+    border-radius: 2px;
+    padding: 0 1px;
+}
+.diff-word-add {
+    background: rgba(46, 160, 67, 0.45);
+    border-radius: 2px;
+    padding: 0 1px;
+}
+.diff-empty {
+    min-height: 1.6em;
+}
+.diff-btn {
+    padding: 6px 20px;
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin: 8px auto;
+    display: block;
+}
+.diff-btn:hover {
+    opacity: 0.85;
+}
+.diff-divider {
+    width: 100%;
+    border-top: 1px solid var(--border);
+}
+
+/* --- kv panel --- */
+#kv-panel .kv-inputs {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+#kv-panel {
+    flex-direction: column;
+}
+#kv-panel .kv-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+#kv-panel .kv-side:first-child {
+    border-right: 1px solid var(--border);
+}
+#kv-panel .kv-label {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+}
+#kv-panel textarea {
+    flex: 1;
+    padding: 12px;
+    font-size: 13px;
+    border: none;
+    outline: none;
+    resize: none;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    font-family: inherit;
+}
+#kv-panel .kv-result {
+    flex: 1;
+    overflow: auto;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--text);
+}
+.kv-btn {
+    padding: 6px 20px;
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin: 8px auto;
+    display: block;
+}
+.kv-btn:hover {
+    opacity: 0.85;
+}
 </style>
 </head>
 
@@ -262,6 +421,8 @@ mark {
 <div id="header">
     <div id="tabs">
         <button class="tab active" data-tab="json-format">JSON 格式化</button>
+        <button class="tab" data-tab="diff">文本对比</button>
+        <button class="tab" data-tab="kv">KV 转 JSON</button>
     </div>
     <button id="themeToggle" title="切换主题">
         <span id="themeIcon">🌙</span>
@@ -270,6 +431,8 @@ mark {
 </div>
 
 <!-- MAIN -->
+<!-- Panel 1: JSON 格式化 -->
+<div id="json-format-panel" class="panel active">
 <div id="main">
     <!-- LEFT -->
     <div id="left">
@@ -282,6 +445,37 @@ mark {
             <input id="search" placeholder="Search key / value..." />
         </div>
         <div id="tree"></div>
+    </div>
+</div>
+</div>
+
+<!-- Panel 2: 文本对比 -->
+<div id="diff-panel" class="panel">
+    <div class="diff-inputs">
+        <div class="diff-side">
+            <div class="diff-label">原始文本</div>
+            <textarea id="diffLeft" placeholder="粘贴原始文本..."></textarea>
+        </div>
+        <div class="diff-side">
+            <div class="diff-label">修改后文本</div>
+            <textarea id="diffRight" placeholder="粘贴修改后文本..."></textarea>
+        </div>
+    </div>
+    <div class="diff-divider"></div>
+    <div class="diff-result" id="diffResult"><span class="diff-unchanged">在上方输入两段文本后自动对比差异</span></div>
+</div>
+
+<!-- Panel 3: KV 转 JSON -->
+<div id="kv-panel" class="panel">
+    <div class="kv-inputs">
+        <div class="kv-side">
+            <div class="kv-label">键值对输入（支持 &amp; / 换行 分隔）</div>
+            <textarea id="kvInput" placeholder="k1=v1&amp;k2=v2 或每行一个 k=v"></textarea>
+        </div>
+        <div class="kv-side">
+            <div class="kv-label">JSON 输出</div>
+            <div class="kv-result" id="kvResult"><span class="diff-unchanged">输入键值对后自动转换</span></div>
+        </div>
     </div>
 </div>
 
@@ -320,7 +514,10 @@ document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
         document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
-        // 当前只有 JSON 格式化一个功能，后续可在此根据 data-tab 切换内容区
+        const target = tab.getAttribute("data-tab");
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        const panel = document.getElementById(target + "-panel");
+        if (panel) panel.classList.add("active");
     });
 });
 
@@ -459,6 +656,132 @@ document.getElementById("input").addEventListener("input", e => {
 
 document.getElementById("search").addEventListener("input", e => {
     search(e.target.value);
+});
+
+/* ========== DIFF ========== */
+function lcs(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({length: m + 1}, () => new Array(n + 1).fill(0));
+    for (let i = 1; i <= m; i++)
+        for (let j = 1; j <= n; j++)
+            dp[i][j] = a[i-1] === b[j-1]
+                ? dp[i-1][j-1] + 1
+                : Math.max(dp[i-1][j], dp[i][j-1]);
+    const ops = [];
+    let i = m, j = n;
+    while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && a[i-1] === b[j-1]) {
+            ops.push({type: "same", text: a[i-1]}); i--; j--;
+        } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+            ops.push({type: "add", text: b[j-1]}); j--;
+        } else {
+            ops.push({type: "del", text: a[i-1]}); i--;
+        }
+    }
+    return ops.reverse();
+}
+
+function wordDiff(a, b) {
+    return lcs(a.split(/(\s+)/), b.split(/(\s+)/));
+}
+
+function escapeHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function doDiff() {
+    const a = document.getElementById("diffLeft").value;
+    const b = document.getElementById("diffRight").value;
+    const el = document.getElementById("diffResult");
+    if (!a || !b) {
+        el.innerHTML = '<span class="diff-unchanged">在上方输入两段文本后自动对比差异</span>';
+        return;
+    }
+    const ops = lcs(a.split("\n"), b.split("\n"));
+    // Pair adjacent del/add for word-level diff
+    const paired = [];
+    let idx = 0;
+    while (idx < ops.length) {
+        if (ops[idx].type === "del") {
+            const dels = [ops[idx]];
+            idx++;
+            while (idx < ops.length && ops[idx].type === "del") { dels.push(ops[idx]); idx++; }
+            const adds = [];
+            while (idx < ops.length && ops[idx].type === "add") { adds.push(ops[idx]); idx++; }
+            const n = Math.min(dels.length, adds.length);
+            for (let k = 0; k < n; k++) paired.push({type: "mod", del: dels[k].text, add: adds[k].text});
+            for (let k = n; k < dels.length; k++) paired.push(dels[k]);
+            for (let k = n; k < adds.length; k++) paired.push(adds[k]);
+        } else if (ops[idx].type === "add") {
+            const adds = [ops[idx]];
+            idx++;
+            while (idx < ops.length && ops[idx].type === "add") { adds.push(ops[idx]); idx++; }
+            const dels = [];
+            while (idx < ops.length && ops[idx].type === "del") { dels.push(ops[idx]); idx++; }
+            const n = Math.min(dels.length, adds.length);
+            for (let k = 0; k < n; k++) paired.push({type: "mod", del: dels[k].text, add: adds[k].text});
+            for (let k = n; k < adds.length; k++) paired.push(adds[k]);
+            for (let k = n; k < dels.length; k++) paired.push(dels[k]);
+        } else {
+            paired.push(ops[idx]); idx++;
+        }
+    }
+    function renderWords(wops) {
+        return wops.map(w => {
+            if (w.type === "same") return escapeHtml(w.text);
+            if (w.type === "del") return '<span class="diff-word-del">' + escapeHtml(w.text) + '</span>';
+            return '<span class="diff-word-add">' + escapeHtml(w.text) + '</span>';
+        }).join("");
+    }
+    let leftHtml = "", rightHtml = "";
+    paired.forEach(op => {
+        if (op.type === "same") {
+            leftHtml  += '<div class="diff-unchanged">' + escapeHtml(op.text) + '</div>';
+            rightHtml += '<div class="diff-unchanged">' + escapeHtml(op.text) + '</div>';
+        } else if (op.type === "del") {
+            leftHtml  += '<div class="diff-removed">' + escapeHtml(op.text) + '</div>';
+            rightHtml += '<div class="diff-empty"></div>';
+        } else if (op.type === "add") {
+            leftHtml  += '<div class="diff-empty"></div>';
+            rightHtml += '<div class="diff-added">' + escapeHtml(op.text) + '</div>';
+        } else {
+            const wops = wordDiff(op.del, op.add);
+            leftHtml  += '<div class="diff-removed">' + renderWords(wops.filter(w => w.type !== "add")) + '</div>';
+            rightHtml += '<div class="diff-added">'  + renderWords(wops.filter(w => w.type !== "del")) + '</div>';
+        }
+    });
+    el.innerHTML =
+        '<div style="display:flex;gap:0;height:100%;">' +
+        '<div style="flex:1;overflow:auto;border-right:1px solid var(--border);">' + leftHtml + '</div>' +
+        '<div style="flex:1;overflow:auto;">' + rightHtml + '</div>' +
+        '</div>';
+}
+
+document.getElementById("diffLeft").addEventListener("input", doDiff);
+document.getElementById("diffRight").addEventListener("input", doDiff);
+
+/* ========== KV to JSON ========== */
+document.getElementById("kvInput").addEventListener("input", () => {
+    const raw = document.getElementById("kvInput").value.trim();
+    const el = document.getElementById("kvResult");
+    if (!raw) { el.innerHTML = '<span class="diff-unchanged">输入键值对后自动转换</span>'; return; }
+    try {
+        const obj = {};
+        const pairs = raw.split(/[&\n]/).filter(s => s.trim());
+        pairs.forEach(pair => {
+            const eqIdx = pair.indexOf("=");
+            if (eqIdx === -1) return;
+            const k = decodeURIComponent(pair.substring(0, eqIdx).trim());
+            let v = decodeURIComponent(pair.substring(eqIdx + 1).trim());
+            if (v === "true") v = true;
+            else if (v === "false") v = false;
+            else if (v !== "" && !isNaN(Number(v))) v = Number(v);
+            obj[k] = v;
+        });
+        el.textContent = JSON.stringify(obj, null, 2);
+    } catch (e) {
+        el.innerHTML = '<span class="diff-removed">解析错误: ' + escapeHtml(e.message) + '</span>';
+    }
 });
 
 </script>
