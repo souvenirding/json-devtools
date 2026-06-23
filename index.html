@@ -165,10 +165,13 @@ textarea {
     padding: 8px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-alt);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 #search {
-    width: 100%;
+    flex: 1;
     padding: 6px 10px;
     border: 1px solid var(--input-border);
     background: var(--input-bg);
@@ -176,6 +179,27 @@ textarea {
     outline: none;
     border-radius: 4px;
     font-size: 13px;
+}
+
+#copyJsonBtn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity .15s;
+}
+
+#copyJsonBtn:hover {
+    opacity: 0.85;
+}
+
+#copyJsonBtn.copied {
+    background: #3fb950;
 }
 
 #search::placeholder {
@@ -443,6 +467,7 @@ mark {
     <div id="right">
         <div id="searchBar">
             <input id="search" placeholder="Search key / value..." />
+            <button id="copyJsonBtn" title="复制格式化后的 JSON">📋 复制 JSON</button>
         </div>
         <div id="tree"></div>
     </div>
@@ -656,6 +681,22 @@ document.getElementById("input").addEventListener("input", e => {
 
 document.getElementById("search").addEventListener("input", e => {
     search(e.target.value);
+});
+
+/* ========== copy JSON ========== */
+document.getElementById("copyJsonBtn").addEventListener("click", () => {
+    if (!state) return;
+    const jsonStr = JSON.stringify(state, null, 4);
+    navigator.clipboard.writeText(jsonStr).then(() => {
+        const btn = document.getElementById("copyJsonBtn");
+        const orig = btn.textContent;
+        btn.textContent = "✅ 已复制";
+        btn.classList.add("copied");
+        setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove("copied");
+        }, 1500);
+    });
 });
 
 /* ========== DIFF ========== */
