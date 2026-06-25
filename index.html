@@ -26,7 +26,10 @@
     --tab-active-bg: #1e1e1e;
     --tab-active-fg: #ffffff;
     --tab-inactive-fg: #9d9d9d;
-    --accent: #0e7afe;
+    --accent: #0a84ff;
+    --btn-secondary-bg: rgba(255, 255, 255, 0.1);
+    --btn-secondary-hover: rgba(255, 255, 255, 0.16);
+    --btn-secondary-fg: #fff;
 }
 
 :root[data-theme="light"] {
@@ -49,7 +52,10 @@
     --tab-active-bg: #ffffff;
     --tab-active-fg: #111;
     --tab-inactive-fg: #555;
-    --accent: #0e7afe;
+    --accent: #007aff;
+    --btn-secondary-bg: rgba(0, 0, 0, 0.05);
+    --btn-secondary-hover: rgba(0, 0, 0, 0.1);
+    --btn-secondary-fg: #1f1f1f;
 }
 
 * { box-sizing: border-box; }
@@ -59,10 +65,56 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     overflow-x: hidden;
+}
+
+/* ========== APPLE-STYLE BUTTONS ========== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .2s, transform .1s, opacity .2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    opacity: 0.88;
+}
+
+.btn-primary.copied {
+    background: #34c759;
+}
+
+.btn-secondary {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-fg);
+}
+
+.btn-secondary:hover {
+    background: var(--btn-secondary-hover);
 }
 
 /* ========== HEADER / TABS ========== */
@@ -92,6 +144,8 @@ body {
     color: var(--tab-inactive-fg);
     cursor: pointer;
     font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
     border: none;
     background: transparent;
     border-bottom: 2px solid transparent;
@@ -106,23 +160,6 @@ body {
 .tab.active {
     color: var(--tab-active-fg);
     border-bottom-color: var(--accent);
-}
-
-#themeToggle {
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-#themeToggle:hover {
-    background: var(--hover);
 }
 
 /* ========== MAIN ========== */
@@ -153,22 +190,6 @@ body {
     flex-shrink: 0;
 }
 
-#clearInputBtn {
-    padding: 4px 10px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: color .15s, border-color .15s, background .15s;
-}
-
-#clearInputBtn:hover {
-    color: var(--text);
-    background: var(--hover);
-}
-
 textarea {
     flex: 1;
     padding: 12px;
@@ -179,7 +200,7 @@ textarea {
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
-    font-family: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     word-break: break-all;
     overflow-wrap: break-word;
 }
@@ -205,34 +226,19 @@ textarea {
 
 #search {
     flex: 1;
-    padding: 6px 10px;
+    padding: 7px 12px;
     border: 1px solid var(--input-border);
     background: var(--input-bg);
     color: var(--input-fg);
     outline: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 13px;
+    font-family: inherit;
+    transition: border-color .2s;
 }
 
-#copyJsonBtn {
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    background: var(--accent);
-    color: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: opacity .15s;
-}
-
-#copyJsonBtn:hover {
-    opacity: 0.85;
-}
-
-#copyJsonBtn.copied {
-    background: #3fb950;
+#search:focus {
+    border-color: var(--accent);
 }
 
 #search::placeholder {
@@ -374,7 +380,7 @@ mark {
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
-    font-family: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     word-break: break-all;
     overflow-wrap: break-word;
 }
@@ -412,20 +418,7 @@ mark {
 .diff-empty {
     min-height: 1.6em;
 }
-.diff-btn {
-    padding: 6px 20px;
-    border: 1px solid var(--border);
-    background: var(--accent);
-    color: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    margin: 8px auto;
-    display: block;
-}
-.diff-btn:hover {
-    opacity: 0.85;
-}
+
 .diff-divider {
     width: 100%;
     border-top: 1px solid var(--border);
@@ -468,7 +461,7 @@ mark {
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
-    font-family: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     word-break: break-all;
     overflow-wrap: break-word;
 }
@@ -483,20 +476,7 @@ mark {
     overflow-x: hidden;
     color: var(--text);
 }
-.kv-btn {
-    padding: 6px 20px;
-    border: 1px solid var(--border);
-    background: var(--accent);
-    color: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    margin: 8px auto;
-    display: block;
-}
-.kv-btn:hover {
-    opacity: 0.85;
-}
+
 </style>
 </head>
 
@@ -509,7 +489,7 @@ mark {
         <button class="tab" data-tab="diff">文本对比</button>
         <button class="tab" data-tab="kv">KV 转 JSON</button>
     </div>
-    <button id="themeToggle" title="切换主题">
+    <button id="themeToggle" class="btn btn-secondary" title="切换主题">
         <span id="themeIcon">🌙</span>
         <span id="themeLabel">深色</span>
     </button>
@@ -522,7 +502,7 @@ mark {
     <!-- LEFT -->
     <div id="left">
         <div id="leftToolbar">
-            <button id="clearInputBtn" title="清空输入">✕ 清空</button>
+            <button id="clearInputBtn" class="btn btn-secondary" title="清空输入">✕ 清空</button>
         </div>
         <textarea id="input" placeholder="粘贴 JSON 或嵌套 JSON string..."></textarea>
     </div>
@@ -531,7 +511,7 @@ mark {
     <div id="right">
         <div id="searchBar">
             <input id="search" placeholder="Search key / value..." />
-            <button id="copyJsonBtn" title="复制格式化后的 JSON">📋 复制 JSON</button>
+            <button id="copyJsonBtn" class="btn btn-primary" title="复制格式化后的 JSON">📋 复制 JSON</button>
         </div>
         <div id="tree"></div>
     </div>
