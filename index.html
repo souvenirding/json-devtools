@@ -141,6 +141,27 @@ body {
     flex-direction: column;
     border-right: 1px solid var(--border);
     background: var(--bg);
+    position: relative;
+}
+
+#clearInputBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 1;
+    transition: color .15s, border-color .15s, background .15s;
+}
+
+#clearInputBtn:hover {
+    color: var(--text);
+    background: var(--hover);
 }
 
 textarea {
@@ -495,6 +516,7 @@ mark {
 <div id="main">
     <!-- LEFT -->
     <div id="left">
+        <button id="clearInputBtn" title="清空输入">✕ 清空</button>
         <textarea id="input" placeholder="粘贴 JSON 或嵌套 JSON string..."></textarea>
     </div>
 
@@ -776,6 +798,13 @@ document.getElementById("input").addEventListener("input", e => {
 
 document.getElementById("search").addEventListener("input", e => {
     search(e.target.value);
+});
+
+/* ========== clear input ========== */
+document.getElementById("clearInputBtn").addEventListener("click", () => {
+    document.getElementById("input").value = "";
+    state = null;
+    document.getElementById("tree").innerHTML = "";
 });
 
 /* ========== copy JSON ========== */
