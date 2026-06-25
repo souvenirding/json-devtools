@@ -141,13 +141,19 @@ body {
     flex-direction: column;
     border-right: 1px solid var(--border);
     background: var(--bg);
-    position: relative;
+}
+
+#leftToolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 4px 8px;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 #clearInputBtn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     padding: 4px 10px;
     border: 1px solid var(--border);
     background: transparent;
@@ -155,7 +161,6 @@ body {
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
-    z-index: 1;
     transition: color .15s, border-color .15s, background .15s;
 }
 
@@ -516,7 +521,9 @@ mark {
 <div id="main">
     <!-- LEFT -->
     <div id="left">
-        <button id="clearInputBtn" title="清空输入">✕ 清空</button>
+        <div id="leftToolbar">
+            <button id="clearInputBtn" title="清空输入">✕ 清空</button>
+        </div>
         <textarea id="input" placeholder="粘贴 JSON 或嵌套 JSON string..."></textarea>
     </div>
 
