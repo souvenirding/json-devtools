@@ -268,6 +268,11 @@ textarea {
     margin-left: 10px;
 }
 
+.bracket {
+    color: var(--muted);
+    font-weight: bold;
+}
+
 .collapsed > .children {
     display: none;
 }
@@ -604,7 +609,8 @@ function createNode(key, value, path = "") {
     const wrap = document.createElement("div");
     wrap.className = "node";
 
-    const isObj = value && typeof value === "object";
+    const isArray = Array.isArray(value);
+    const isObj = value && typeof value === "object" && !isArray;
 
     const row = document.createElement("div");
     row.className = "row";
@@ -629,10 +635,29 @@ function createNode(key, value, path = "") {
     const children = document.createElement("div");
     children.className = "children";
 
-    if (isObj) {
-        for (const k in value) {
-            children.appendChild(createNode(k, value[k], fullPath));
+    if (isObj || isArray) {
+        const openBracket = document.createElement("span");
+        openBracket.className = "bracket";
+        openBracket.textContent = isArray ? " [" : " {";
+        row.appendChild(openBracket);
+
+        if (isArray) {
+            value.forEach((item, i) => {
+                children.appendChild(createNode(String(i), item, fullPath));
+            });
+        } else {
+            for (const k in value) {
+                children.appendChild(createNode(k, value[k], fullPath));
+            }
         }
+
+        const closeBracketRow = document.createElement("div");
+        closeBracketRow.className = "row";
+        const closeBracket = document.createElement("span");
+        closeBracket.className = "bracket";
+        closeBracket.textContent = isArray ? "]" : "}";
+        closeBracketRow.appendChild(closeBracket);
+        children.appendChild(closeBracketRow);
     } else {
         const val = document.createElement("span");
         val.className = "value";
@@ -659,8 +684,48 @@ function render() {
 
     if (!state) return;
 
-    for (const k in state) {
-        tree.appendChild(createNode(k, state[k], ""));
+    const isArray = Array.isArray(state);
+    const isObj = state && typeof state === "object" && !isArray;
+
+    if (isObj || isArray) {
+        // opening bracket
+        const openRow = document.createElement("div");
+        openRow.className = "row";
+        const openBracket = document.createElement("span");
+        openBracket.className = "bracket";
+        openBracket.textContent = isArray ? "[" : "{";
+        openRow.appendChild(openBracket);
+        tree.appendChild(openRow);
+
+        // children
+        const childrenWrap = document.createElement("div");
+        childrenWrap.className = "children";
+        if (isArray) {
+            state.forEach((item, i) => {
+                childrenWrap.appendChild(createNode(String(i), item, ""));
+            });
+        } else {
+            for (const k in state) {
+                childrenWrap.appendChild(createNode(k, state[k], ""));
+            }
+        }
+
+        // closing bracket
+        const closeRow = document.createElement("div");
+        closeRow.className = "row";
+        const closeBracket = document.createElement("span");
+        closeBracket.className = "bracket";
+        closeBracket.textContent = isArray ? "]" : "}";
+        closeRow.appendChild(closeBracket);
+        childrenWrap.appendChild(closeRow);
+
+        tree.appendChild(childrenWrap);
+    } else {
+        // primitive root
+        const val = document.createElement("span");
+        val.className = "value";
+        val.textContent = String(state);
+        tree.appendChild(val);
     }
 }
 
