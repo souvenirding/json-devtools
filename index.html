@@ -596,11 +596,153 @@ document.querySelectorAll(".tab").forEach(tab => {
     });
 });
 
+/* ========== safe parse (BigInt-aware JSON parser) ========== */
+function safeParse(text) {
+    let pos = 0;
+    const len = text.length;
+
+    function skipWs() {
+        while (pos < len && /\s/.test(text[pos])) pos++;
+    }
+
+    function parseValue() {
+        skipWs();
+        if (pos >= len) throw new Error("Unexpected end of input");
+        const ch = text[pos];
+        if (ch === "{") return parseObject();
+        if (ch === "[") return parseArray();
+        if (ch === '"') return parseString();
+        if (ch === "t" || ch === "f") return parseBoolean();
+        if (ch === "n") return parseNull();
+        if (ch === "-" || /\d/.test(ch)) return parseNumber();
+        throw new Error("Unexpected character: " + ch);
+    }
+
+    function parseObject() {
+        const obj = {};
+        pos++;
+        skipWs();
+        if (text[pos] === "}") { pos++; return obj; }
+        while (pos < len) {
+            skipWs();
+            const key = parseString();
+            skipWs();
+            if (text[pos] !== ":") throw new Error("Expected ':'");
+            pos++;
+            const value = parseValue();
+            obj[key] = value;
+            skipWs();
+            if (text[pos] === "}") { pos++; return obj; }
+            if (text[pos] !== ",") throw new Error("Expected ',' or '}'");
+            pos++;
+        }
+        throw new Error("Unterminated object");
+    }
+
+    function parseArray() {
+        const arr = [];
+        pos++;
+        skipWs();
+        if (text[pos] === "]") { pos++; return arr; }
+        while (pos < len) {
+            arr.push(parseValue());
+            skipWs();
+            if (text[pos] === "]") { pos++; return arr; }
+            if (text[pos] !== ",") throw new Error("Expected ',' or ']'");
+            pos++;
+        }
+        throw new Error("Unterminated array");
+    }
+
+    function parseString() {
+        if (text[pos] !== '"') throw new Error("Expected string");
+        pos++;
+        let result = "";
+        while (pos < len) {
+            const ch = text[pos];
+            if (ch === '"') { pos++; return result; }
+            if (ch === "\\") {
+                pos++;
+                const ec = text[pos];
+                switch (ec) {
+                    case '"': result += '"'; break;
+                    case "\\": result += "\\"; break;
+                    case "/": result += "/"; break;
+                    case "b": result += "\b"; break;
+                    case "f": result += "\f"; break;
+                    case "n": result += "\n"; break;
+                    case "r": result += "\r"; break;
+                    case "t": result += "\t"; break;
+                    case "u":
+                        const hex = text.substr(pos + 1, 4);
+                        result += String.fromCharCode(parseInt(hex, 16));
+                        pos += 4;
+                        break;
+                    default: result += ec;
+                }
+            } else {
+                result += ch;
+            }
+            pos++;
+        }
+        throw new Error("Unterminated string");
+    }
+
+    function parseNumber() {
+        const start = pos;
+        if (text[pos] === "-") pos++;
+        while (pos < len && /\d/.test(text[pos])) pos++;
+        if (text[pos] === ".") {
+            pos++;
+            while (pos < len && /\d/.test(text[pos])) pos++;
+        }
+        if (text[pos] === "e" || text[pos] === "E") {
+            pos++;
+            if (text[pos] === "+" || text[pos] === "-") pos++;
+            while (pos < len && /\d/.test(text[pos])) pos++;
+        }
+        const numStr = text.substring(start, pos);
+        const isInteger = /^-?\d+$/.test(numStr);
+        if (isInteger) {
+            const num = Number(numStr);
+            if (Number.isSafeInteger(num)) return num;
+            return BigInt(numStr);
+        }
+        return Number(numStr);
+    }
+
+    function parseBoolean() {
+        if (text.substr(pos, 4) === "true") { pos += 4; return true; }
+        if (text.substr(pos, 5) === "false") { pos += 5; return false; }
+        throw new Error("Invalid boolean");
+    }
+
+    function parseNull() {
+        if (text.substr(pos, 4) === "null") { pos += 4; return null; }
+        throw new Error("Invalid null");
+    }
+
+    const result = parseValue();
+    skipWs();
+    if (pos < len) throw new Error("Unexpected trailing content");
+    return result;
+}
+
+/* ========== safe stringify (BigInt-aware) ========== */
+function safeStringify(obj, indent) {
+    const marker = "__BIGINT_MARKER__";
+    const json = JSON.stringify(obj, (key, value) => {
+        if (typeof value === "bigint") return marker + value.toString() + "__";
+        return value;
+    }, indent);
+    return json.replace(new RegExp('"' + marker + '(-?\\d+)__"', "g"), "$1");
+}
+
 /* ========== parse ========== */
 function deepParse(v) {
     if (typeof v === "string") {
         try {
-            return deepParse(JSON.parse(v));
+            return deepParse(safeParse(v));
         } catch {
             return v;
         }
@@ -747,7 +889,7 @@ function render() {
 /* ========== live update ========== */
 function update(text) {
     try {
-        state = deepParse(JSON.parse(text));
+        state = deepParse(safeParse(text));
         render();
     } catch {
         document.getElementById("tree").innerHTML =
@@ -803,7 +945,7 @@ document.getElementById("clearInputBtn").addEventListener("click", () => {
 /* ========== copy JSON ========== */
 document.getElementById("copyJsonBtn").addEventListener("click", () => {
     if (!state) return;
-    const jsonStr = JSON.stringify(state, null, 4);
+    const jsonStr = safeStringify(state, 4);
     navigator.clipboard.writeText(jsonStr).then(() => {
         const btn = document.getElementById("copyJsonBtn");
         const orig = btn.textContent;
@@ -933,10 +1075,14 @@ document.getElementById("kvInput").addEventListener("input", () => {
             let v = decodeURIComponent(pair.substring(eqIdx + 1).trim());
             if (v === "true") v = true;
             else if (v === "false") v = false;
-            else if (v !== "" && !isNaN(Number(v))) v = Number(v);
+            else if (v !== "" && !isNaN(Number(v))) {
+                const num = Number(v);
+                if (/^-?\d+$/.test(v.trim()) && !Number.isSafeInteger(num)) v = BigInt(v.trim());
+                else v = num;
+            }
             obj[k] = v;
         });
-        el.textContent = JSON.stringify(obj, null, 2);
+        el.textContent = safeStringify(obj, 2);
     } catch (e) {
         el.innerHTML = '<span class="diff-removed">解析错误: ' + escapeHtml(e.message) + '</span>';
     }
