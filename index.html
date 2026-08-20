@@ -639,6 +639,107 @@ mark {
     color: var(--text);
 }
 
+/* --- timestamp panel --- */
+#timestamp-panel {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 40px 20px;
+}
+.ts-card {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 32px;
+    min-width: 420px;
+    text-align: center;
+}
+.ts-card .ts-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.ts-card .ts-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    letter-spacing: 1px;
+    user-select: all;
+    cursor: pointer;
+}
+.ts-card .ts-value:hover {
+    color: var(--accent);
+}
+.ts-card .ts-copy-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+/* --- md5 panel --- */
+#md5-panel {
+    flex-direction: column;
+    overflow: auto;
+    padding: 20px;
+    gap: 16px;
+}
+.md5-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    color: var(--text);
+}
+.md5-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 12px 0;
+}
+#md5-panel textarea.md5-input {
+    width: 100%;
+    min-height: 160px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: var(--bg);
+    color: var(--text);
+    resize: vertical;
+    line-height: 1.5;
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
+#md5-panel textarea.md5-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.md5-result-block {
+    margin-top: 4px;
+}
+.md5-result-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.md5-output {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: var(--bg-alt);
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.6;
+    min-height: 48px;
+    user-select: all;
+}
+
 </style>
 </head>
 
@@ -651,6 +752,8 @@ mark {
         <button class="tab" data-tab="diff">文本对比</button>
         <button class="tab" data-tab="kv">KV 转 JSON</button>
         <button class="tab" data-tab="rsa">RSA 密钥</button>
+        <button class="tab" data-tab="timestamp">时间戳</button>
+        <button class="tab" data-tab="md5">MD5 加密</button>
     </div>
     <button id="themeToggle" class="btn btn-secondary" title="切换主题">
         <span id="themeIcon">🌙</span>
@@ -675,6 +778,7 @@ mark {
         <div id="searchBar">
             <input id="search" placeholder="Search key / value..." />
             <button id="copyJsonBtn" class="btn btn-secondary" title="复制格式化后的 JSON">📋 复制 JSON</button>
+            <button id="minifyJsonBtn" class="btn btn-secondary" title="压缩 JSON">🗜️ 压缩</button>
         </div>
         <div id="tree"></div>
     </div>
@@ -760,6 +864,39 @@ mark {
             <button id="rsaVerifyClearBtn" class="btn btn-secondary">✕ 清空</button>
         </div>
         <div id="rsaVerifyResult" class="rsa-status info">输入密钥后点击验证</div>
+    </div>
+</div>
+
+<!-- Panel 5: 时间戳 -->
+<div id="timestamp-panel" class="panel">
+    <div class="ts-card">
+        <div class="ts-label">毫秒时间戳</div>
+        <div class="ts-value" id="tsMillis">—</div>
+        <div class="ts-copy-hint">点击复制</div>
+    </div>
+    <div class="ts-card">
+        <div class="ts-label">秒时间戳</div>
+        <div class="ts-value" id="tsSeconds">—</div>
+        <div class="ts-copy-hint">点击复制</div>
+    </div>
+    <div class="ts-card">
+        <div class="ts-label">香港时间 (HKT, UTC+8)</div>
+        <div class="ts-value" id="tsFormatted">—</div>
+        <div class="ts-copy-hint">点击复制</div>
+    </div>
+</div>
+
+<!-- Panel 6: MD5 加密 -->
+<div id="md5-panel" class="panel">
+    <h3 class="md5-section-title">MD5 加密</h3>
+    <p class="md5-hint">输入文本后自动计算 MD5 哈希值</p>
+    <textarea id="md5Input" class="md5-input" placeholder="输入需要加密的文本..."></textarea>
+    <div class="md5-result-block">
+        <div class="md5-result-label">
+            <strong>MD5 结果</strong>
+            <button id="md5CopyBtn" class="btn btn-secondary" style="padding: 3px 10px; font-size: 12px;">📋 复制</button>
+        </div>
+        <div id="md5Output" class="md5-output">—</div>
     </div>
 </div>
 
@@ -1163,6 +1300,22 @@ document.getElementById("clearInputBtn").addEventListener("click", () => {
     document.getElementById("tree").innerHTML = "";
 });
 
+/* ========== JSON Minify ========== */
+document.getElementById("minifyJsonBtn").addEventListener("click", () => {
+    if (!state) return;
+    const minified = safeStringify(state, 0);
+    navigator.clipboard.writeText(minified).then(() => {
+        const btn = document.getElementById("minifyJsonBtn");
+        const orig = btn.innerHTML;
+        btn.innerHTML = "✅ 已复制";
+        btn.classList.add("copied");
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.classList.remove("copied");
+        }, 1500);
+    });
+});
+
 /* ========== copy JSON ========== */
 document.getElementById("copyJsonBtn").addEventListener("click", () => {
     if (!state) return;
@@ -1549,6 +1702,136 @@ RSA_VERIFY_CLEAR_BTN.addEventListener('click', () => {
     RSA_VERIFY_PUB_INPUT.value = '';
     RSA_VERIFY_PRIV_INPUT.value = '';
     setVerifyStatus('info', '输入密钥后点击验证');
+});
+
+/* ========== Timestamp ========== */
+let tsTimer = null;
+function updateTimestamps() {
+    const now = new Date();
+    const ms = now.getTime();
+    const sec = Math.floor(ms / 1000);
+    document.getElementById('tsMillis').textContent = ms;
+    document.getElementById('tsSeconds').textContent = sec;
+    // Format in HK timezone (UTC+8)
+    const hkt = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
+    const pad = n => String(n).padStart(2, '0');
+    const formatted = `${hkt.getFullYear()}-${pad(hkt.getMonth()+1)}-${pad(hkt.getDate())} ${pad(hkt.getHours())}:${pad(hkt.getMinutes())}:${pad(hkt.getSeconds())}`;
+    document.getElementById('tsFormatted').textContent = formatted;
+}
+function startTimestampTimer() {
+    if (tsTimer) return;
+    updateTimestamps();
+    tsTimer = setInterval(updateTimestamps, 1000);
+}
+function stopTimestampTimer() {
+    if (tsTimer) { clearInterval(tsTimer); tsTimer = null; }
+}
+// Start/stop based on tab visibility
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-tab');
+        if (target === 'timestamp') startTimestampTimer();
+        else stopTimestampTimer();
+    });
+});
+// Copy on click for timestamp values
+['tsMillis','tsSeconds','tsFormatted'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function() {
+        const text = this.textContent;
+        if (text === '—') return;
+        navigator.clipboard.writeText(text).then(() => {
+            const hint = this.nextElementSibling;
+            const orig = hint.textContent;
+            hint.textContent = '✅ 已复制';
+            setTimeout(() => { hint.textContent = orig; }, 1200);
+        });
+    });
+});
+
+/* ========== MD5 ========== */
+// Minimal MD5 implementation (RFC 1321)
+function md5(str) {
+    function utf8Encode(s) {
+        const encoder = new TextEncoder();
+        return Array.from(encoder.encode(s));
+    }
+    function add32(a, b) { return (a + b) & 0xFFFFFFFF; }
+    function cmn(q, a, b, x, s, t) {
+        a = add32(add32(a, q), add32(x, t));
+        return add32((a << s) | (a >>> (32 - s)), b);
+    }
+    function ff(a,b,c,d,x,s,t) { return cmn((b & c) | ((~b) & d), a, b, x, s, t); }
+    function gg(a,b,c,d,x,s,t) { return cmn((b & d) | (c & (~d)), a, b, x, s, t); }
+    function hh(a,b,c,d,x,s,t) { return cmn(b ^ c ^ d, a, b, x, s, t); }
+    function ii(a,b,c,d,x,s,t) { return cmn(c ^ (b | (~d)), a, b, x, s, t); }
+
+    const bytes = utf8Encode(str);
+    const n = bytes.length;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    const bits = n * 8;
+    bytes.push(bits & 0xFF, (bits >> 8) & 0xFF, (bits >> 16) & 0xFF, (bits >> 24) & 0xFF);
+    bytes.push(0, 0, 0, 0);
+
+    let a = 0x67452301, b = 0xEFCDAB89, c = 0x98BADCFE, d = 0x10325476;
+
+    for (let i = 0; i < bytes.length; i += 64) {
+        const x = [];
+        for (let j = 0; j < 64; j += 4) {
+            x.push(bytes[i+j] | (bytes[i+j+1] << 8) | (bytes[i+j+2] << 16) | (bytes[i+j+3] << 24));
+        }
+        const aa = a, bb = b, cc = c, dd = d;
+        a=ff(a,b,c,d,x[0],7,0xd76aa478);d=ff(d,a,b,c,x[1],12,0xe8c7b756);c=ff(c,d,a,b,x[2],17,0x242070db);b=ff(b,c,d,a,x[3],22,0xc1bdceee);
+        a=ff(a,b,c,d,x[4],7,0xf57c0faf);d=ff(d,a,b,c,x[5],12,0x4787c62a);c=ff(c,d,a,b,x[6],17,0xa8304613);b=ff(b,c,d,a,x[7],22,0xfd469501);
+        a=ff(a,b,c,d,x[8],7,0x698098d8);d=ff(d,a,b,c,x[9],12,0x8b44f7af);c=ff(c,d,a,b,x[10],17,0xffff5bb1);b=ff(b,c,d,a,x[11],22,0x895cd7be);
+        a=ff(a,b,c,d,x[12],7,0x6b901122);d=ff(d,a,b,c,x[13],12,0xfd987193);c=ff(c,d,a,b,x[14],17,0xa679438e);b=ff(b,c,d,a,x[15],22,0x49b40821);
+        a=gg(a,b,c,d,x[1],5,0xf61e2562);d=gg(d,a,b,c,x[6],9,0xc040b340);c=gg(c,d,a,b,x[11],14,0x265e5a51);b=gg(b,c,d,a,x[0],20,0xe9b6c7aa);
+        a=gg(a,b,c,d,x[5],5,0xd62f105d);d=gg(d,a,b,c,x[10],9,0x02441453);c=gg(c,d,a,b,x[15],14,0xd8a1e681);b=gg(b,c,d,a,x[4],20,0xe7d3fbc8);
+        a=gg(a,b,c,d,x[9],5,0x21e1cde6);d=gg(d,a,b,c,x[14],9,0xc33707d6);c=gg(c,d,a,b,x[3],14,0xf4d50d87);b=gg(b,c,d,a,x[8],20,0x455a14ed);
+        a=gg(a,b,c,d,x[13],5,0xa9e3e905);d=gg(d,a,b,c,x[2],9,0xfcefa3f8);c=gg(c,d,a,b,x[7],14,0x676f02d9);b=gg(b,c,d,a,x[12],20,0x8d2a4c8a);
+        a=hh(a,b,c,d,x[5],4,0xfffa3942);d=hh(d,a,b,c,x[8],11,0x8771f681);c=hh(c,d,a,b,x[11],16,0x6d9d6122);b=hh(b,c,d,a,x[14],23,0xfde5380c);
+        a=hh(a,b,c,d,x[1],4,0xa4beea44);d=hh(d,a,b,c,x[4],11,0x4bdecfa9);c=hh(c,d,a,b,x[7],16,0xf6bb4b60);b=hh(b,c,d,a,x[10],23,0xbebfbc70);
+        a=hh(a,b,c,d,x[13],4,0x289b7ec6);d=hh(d,a,b,c,x[0],11,0xeaa127fa);c=hh(c,d,a,b,x[3],16,0xd4ef3085);b=hh(b,c,d,a,x[6],23,0x04881d05);
+        a=hh(a,b,c,d,x[9],4,0xd9d4d039);d=hh(d,a,b,c,x[12],11,0xe6db99e5);c=hh(c,d,a,b,x[15],16,0x1fa27cf8);b=hh(b,c,d,a,x[2],23,0xc4ac5665);
+        a=ii(a,b,c,d,x[0],6,0xf4292244);d=ii(d,a,b,c,x[7],10,0x432aff97);c=ii(c,d,a,b,x[14],15,0xab9423a7);b=ii(b,c,d,a,x[5],21,0xfc93a039);
+        a=ii(a,b,c,d,x[12],6,0x655b59c3);d=ii(d,a,b,c,x[3],10,0x8f0ccc92);c=ii(c,d,a,b,x[10],15,0xffeff47d);b=ii(b,c,d,a,x[1],21,0x85845dd1);
+        a=ii(a,b,c,d,x[8],6,0x6fa87e4f);d=ii(d,a,b,c,x[15],10,0xfe2ce6e0);c=ii(c,d,a,b,x[6],15,0xa3014314);b=ii(b,c,d,a,x[13],21,0x4e0811a1);
+        a=ii(a,b,c,d,x[4],6,0xf7537e82);d=ii(d,a,b,c,x[11],10,0xbd3af235);c=ii(c,d,a,b,x[2],15,0x2ad7d2bb);b=ii(b,c,d,a,x[9],21,0xeb86d391);
+        a=add32(a,aa);b=add32(b,bb);c=add32(c,cc);d=add32(d,dd);
+    }
+    function hex(n) {
+        let s = '';
+        for (let i = 0; i < 4; i++) {
+            const byte = (n >>> (i * 8)) & 0xFF;
+            s += ('0' + byte.toString(16)).slice(-2);
+        }
+        return s;
+    }
+    return hex(a) + hex(b) + hex(c) + hex(d);
+}
+
+function updateMD5() {
+    const input = document.getElementById('md5Input').value;
+    const output = document.getElementById('md5Output');
+    if (!input) { output.textContent = '—'; return; }
+    output.textContent = md5(input);
+}
+
+document.getElementById('md5Input').addEventListener('input', updateMD5);
+
+document.getElementById('md5CopyBtn').addEventListener('click', () => {
+    const text = document.getElementById('md5Output').textContent;
+    if (text === '—') return;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('md5CopyBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✅ 已复制';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.classList.remove('copied');
+        }, 1500);
+    });
 });
 
 </script>
