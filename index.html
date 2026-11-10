@@ -740,6 +740,111 @@ mark {
     user-select: all;
 }
 
+/* --- random string panel --- */
+#randstr-panel {
+    flex-direction: column;
+    overflow: auto;
+    padding: 20px;
+    gap: 16px;
+}
+.randstr-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding: 16px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.randstr-control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.randstr-control-group label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+}
+.randstr-checkboxes {
+    display: flex;
+    gap: 14px;
+}
+.randstr-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.randstr-checkbox input {
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+input[type="range"].randstr-range {
+    width: 160px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+.randstr-num-input {
+    width: 64px;
+    padding: 5px 8px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--input-fg);
+    outline: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    text-align: center;
+}
+.randstr-num-input:focus {
+    border-color: var(--accent);
+}
+.randstr-value-display {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 40px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.randstr-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.randstr-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-alt);
+    margin-bottom: 8px;
+}
+.randstr-item-index {
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+    width: 20px;
+}
+.randstr-item-value {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: var(--text);
+    word-break: break-all;
+    overflow-wrap: break-word;
+    user-select: all;
+}
+
 </style>
 </head>
 
@@ -754,6 +859,7 @@ mark {
         <button class="tab" data-tab="rsa">RSA 密钥</button>
         <button class="tab" data-tab="timestamp">时间戳</button>
         <button class="tab" data-tab="md5">MD5 加密</button>
+        <button class="tab" data-tab="randstr">随机字符串</button>
     </div>
     <button id="themeToggle" class="btn btn-secondary" title="切换主题">
         <span id="themeIcon">🌙</span>
@@ -898,6 +1004,37 @@ mark {
         </div>
         <div id="md5Output" class="md5-output">—</div>
     </div>
+</div>
+
+<!-- Panel 7: 随机字符串 -->
+<div id="randstr-panel" class="panel">
+    <div>
+        <h3 class="md5-section-title">随机字符串生成</h3>
+        <p class="md5-hint">使用 crypto.getRandomValues() 安全生成，每种已选字符类型至少出现一次</p>
+    </div>
+    <div class="randstr-controls">
+        <div class="randstr-control-group">
+            <label for="randstrLength">长度</label>
+            <input type="range" id="randstrLength" class="randstr-range" min="10" max="50" value="30" />
+            <span class="randstr-value-display" id="randstrLengthValue">30</span>
+        </div>
+        <div class="randstr-control-group">
+            <label for="randstrCount">数量</label>
+            <input type="number" id="randstrCount" class="randstr-num-input" min="1" max="10" value="5" />
+        </div>
+        <div class="randstr-control-group randstr-checkboxes">
+            <label class="randstr-checkbox"><input type="checkbox" id="randstrUpper" checked />大写字母</label>
+            <label class="randstr-checkbox"><input type="checkbox" id="randstrLower" checked />小写字母</label>
+            <label class="randstr-checkbox"><input type="checkbox" id="randstrDigit" checked />数字</label>
+            <label class="randstr-checkbox"><input type="checkbox" id="randstrSymbol" />特殊符号</label>
+        </div>
+        <button id="randstrGenerateBtn" class="btn btn-primary">🎲 重新生成</button>
+    </div>
+    <div class="randstr-results-header">
+        <strong style="font-size: 13px;">生成结果</strong>
+        <button id="randstrCopyAllBtn" class="btn btn-secondary" style="padding: 3px 10px; font-size: 12px;">📋 复制全部</button>
+    </div>
+    <div id="randstrResults"></div>
 </div>
 
 <script>
@@ -1833,6 +1970,131 @@ document.getElementById('md5CopyBtn').addEventListener('click', () => {
         }, 1500);
     });
 });
+
+/* ========== Random String ========== */
+const RANDSTR_SETS = {
+    upper:  'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    lower:  'abcdefghijklmnopqrstuvwxyz',
+    digit:  '0123456789',
+    symbol: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+};
+
+// Unbiased random integer in [0, max) using crypto.getRandomValues with rejection sampling
+function secureRandomInt(max) {
+    const limit = 256 - (256 % max);
+    const buf = new Uint8Array(1);
+    while (true) {
+        crypto.getRandomValues(buf);
+        if (buf[0] < limit) return buf[0] % max;
+    }
+}
+
+function secureShuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = secureRandomInt(i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function generateRandomString(length, sets) {
+    const chars = [];
+    // Guarantee each selected set appears at least once
+    sets.forEach(set => {
+        chars.push(set[secureRandomInt(set.length)]);
+    });
+    const all = sets.join('');
+    while (chars.length < length) {
+        chars.push(all[secureRandomInt(all.length)]);
+    }
+    return secureShuffle(chars).join('');
+}
+
+function randstrSelectedSets() {
+    const sets = [];
+    if (document.getElementById('randstrUpper').checked) sets.push(RANDSTR_SETS.upper);
+    if (document.getElementById('randstrLower').checked) sets.push(RANDSTR_SETS.lower);
+    if (document.getElementById('randstrDigit').checked) sets.push(RANDSTR_SETS.digit);
+    if (document.getElementById('randstrSymbol').checked) sets.push(RANDSTR_SETS.symbol);
+    return sets;
+}
+
+function flashCopied(btn, orig) {
+    btn.textContent = '✅ 已复制';
+    btn.classList.add('copied');
+    setTimeout(() => {
+        btn.textContent = orig;
+        btn.classList.remove('copied');
+    }, 1500);
+}
+
+function renderRandstr() {
+    const container = document.getElementById('randstrResults');
+    container.innerHTML = '';
+
+    const sets = randstrSelectedSets();
+    if (sets.length === 0) {
+        container.innerHTML = '<p class="md5-hint">请至少选择一种字符类型</p>';
+        return;
+    }
+
+    const length = parseInt(document.getElementById('randstrLength').value, 10);
+    const count = parseInt(document.getElementById('randstrCount').value, 10);
+
+    for (let i = 0; i < count; i++) {
+        const item = document.createElement('div');
+        item.className = 'randstr-item';
+
+        const index = document.createElement('span');
+        index.className = 'randstr-item-index';
+        index.textContent = String(i + 1) + '.';
+
+        const value = document.createElement('span');
+        value.className = 'randstr-item-value';
+        value.textContent = generateRandomString(length, sets);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-secondary';
+        copyBtn.style.cssText = 'padding: 3px 10px; font-size: 12px;';
+        copyBtn.textContent = '📋 复制';
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(value.textContent).then(() => flashCopied(copyBtn, '📋 复制'));
+        });
+
+        item.appendChild(index);
+        item.appendChild(value);
+        item.appendChild(copyBtn);
+        container.appendChild(item);
+    }
+}
+
+document.getElementById('randstrLength').addEventListener('input', e => {
+    document.getElementById('randstrLengthValue').textContent = e.target.value;
+    renderRandstr();
+});
+
+document.getElementById('randstrCount').addEventListener('change', e => {
+    let v = parseInt(e.target.value, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 10) v = 10;
+    e.target.value = v;
+    renderRandstr();
+});
+
+['randstrUpper', 'randstrLower', 'randstrDigit', 'randstrSymbol'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderRandstr);
+});
+
+document.getElementById('randstrGenerateBtn').addEventListener('click', renderRandstr);
+
+document.getElementById('randstrCopyAllBtn').addEventListener('click', () => {
+    const values = Array.from(document.querySelectorAll('.randstr-item-value')).map(el => el.textContent);
+    if (values.length === 0) return;
+    const btn = document.getElementById('randstrCopyAllBtn');
+    navigator.clipboard.writeText(values.join('\n')).then(() => flashCopied(btn, '📋 复制全部'));
+});
+
+renderRandstr();
 
 </script>
 
