@@ -433,6 +433,7 @@ mark {
 /* --- rsa panel --- */
 #rsa-panel {
     flex-direction: column;
+    align-items: center;
     overflow: auto;
 }
 #rsa-panel .rsa-tabs {
@@ -441,7 +442,7 @@ mark {
     background: var(--btn-secondary-bg);
     border-radius: 8px;
     padding: 2px;
-    margin: 12px 12px 0 12px;
+    margin: 16px 12px 0 12px;
     width: fit-content;
 }
 #rsa-panel .rsa-tab {
@@ -466,6 +467,8 @@ mark {
 }
 #rsa-panel .rsa-content {
     flex: 1;
+    width: 100%;
+    max-width: 760px;
     padding: 12px;
     overflow: auto;
     display: none;
@@ -489,6 +492,17 @@ mark {
     gap: 8px;
     margin-bottom: 12px;
     flex-wrap: wrap;
+}
+#rsa-generate .rsa-gen-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+#rsa-generate .rsa-gen-header .rsa-hint {
+    margin-bottom: 0;
 }
 #rsa-panel .rsa-result-block {
     margin-bottom: 16px;
@@ -942,9 +956,11 @@ input[type="range"].randstr-range {
 
     <!-- Generate Mode -->
     <div id="rsa-generate" class="rsa-content active">
-        <h3 class="rsa-section-title">生成 RSA 2048 位密钥对（PKCS8）</h3>
-        <p class="rsa-hint">点击下方按钮生成一对 2048 位 RSA 密钥，私钥为 PKCS8 格式</p>
-        <div class="rsa-actions">
+        <div class="rsa-gen-header">
+            <div>
+                <h3 class="rsa-section-title">生成 RSA 2048 位密钥对（PKCS8）</h3>
+                <p class="rsa-hint">点击按钮生成一对 2048 位 RSA 密钥，私钥为 PKCS8 格式</p>
+            </div>
             <button id="rsaGenerateBtn" class="btn btn-primary">
                 <span id="rsaGenerateBtnText">🔑 生成密钥对</span>
             </button>
